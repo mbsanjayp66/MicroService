@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sanjay.userService.entities.User;
 import com.sanjay.userService.services.UserService;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 @RestController
 @RequestMapping("/users")
 public class userController {
@@ -28,8 +30,18 @@ public class userController {
 	}
 	
 	@GetMapping("/{userId}")
+	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod="ratingHotelFallback")
 	public ResponseEntity<User>createUser(@PathVariable String userId){
 		return ResponseEntity.ok(userService.getUser(userId));
+	}
+	
+	public ResponseEntity<User>ratingHotelFallback(String userId,Exception ex){
+		System.out.println("FallBack is Executed because service is down:"+ex.getMessage());
+		User user = new User();
+		user.setName("dummy");
+		user.setEmail("dummy@gmail.com");
+		user.setAbout("this user is created by dummy user");
+		return new ResponseEntity<User>(user,HttpStatus.OK);
 	}
 	
 	@GetMapping
